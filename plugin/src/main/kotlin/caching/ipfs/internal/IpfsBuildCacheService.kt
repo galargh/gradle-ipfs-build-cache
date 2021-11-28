@@ -12,6 +12,7 @@ import io.libp2p.etc.types.toByteBuf
 import io.libp2p.pubsub.gossip.Gossip
 import io.libp2p.security.noise.NoiseXXSecureChannel
 import io.libp2p.transport.tcp.TcpTransport
+import org.apache.logging.log4j.LogManager
 import org.gradle.caching.*
 import java.net.Inet4Address
 import java.net.InetAddress
@@ -44,7 +45,7 @@ class IpfsBuildCacheService: BuildCacheService {
     private val subscriber = Subscriber {
         val (gradleHashCode, ipfsHashCode) =
                 it.data.toByteArray().toString(StandardCharsets.UTF_8).split(",")
-        kvStore[gradleHashCode] = ipfsHashCode
+        store(gradleHashCode, ipfsHashCode)
     }
 
     private val discoverer: Discoverer
@@ -55,14 +56,18 @@ class IpfsBuildCacheService: BuildCacheService {
         publisher = gossip.createPublisher(host.privKey)
         discoverer = MDnsDiscovery(host, address = privateNetworkAddress())
         discoverer.newPeerFoundListeners.add {
-            if (it.peerId != host.peerId) {
-                // TODO("Request all KV entries and populate the store on new connection.")
-                host.network.connect(it.peerId, *it.addresses.toTypedArray())
-            }
+            // TODO("Request all KV entries and populate the store on new connection.")
+            host.network.connect(it.peerId, *it.addresses.toTypedArray())
         }
     }
 
+    private fun store(gradleHashCode: String, ipfsHashCode: String) {
+        kvStore[gradleHashCode] = ipfsHashCode
+    }
+
     private fun publish(gradleHashCode: String, ipfsHashCode: String) {
+        logger.info("Publishing $gradleHashCode=$ipfsHashCode")
+        store(gradleHashCode, ipfsHashCode)
         publisher.publish("$gradleHashCode,$ipfsHashCode".toByteArray().toByteBuf(), topic)
     }
 
@@ -96,6 +101,8 @@ class IpfsBuildCacheService: BuildCacheService {
     }
 
     companion object {
+        private val logger = LogManager.getLogger(IpfsBuildCacheService::class.java.name)
+
         private fun privateNetworkAddress(): InetAddress {
             val interfaces = NetworkInterface.getNetworkInterfaces().toList()
             val addresses = interfaces.flatMap { it.inetAddresses.toList() }
@@ -107,5 +114,6 @@ class IpfsBuildCacheService: BuildCacheService {
             else
                 InetAddress.getLoopbackAddress()
         }
+
     }
 }

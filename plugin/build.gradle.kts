@@ -31,6 +31,10 @@ dependencies {
     // Use jvm-libp2p.
     implementation("io.libp2p:jvm-libp2p-minimal:0.8.3-RELEASE")
 
+    // Use log4j.
+    implementation("org.apache.logging.log4j:log4j-api:2.14.1")
+    implementation("org.apache.logging.log4j:log4j-core:2.14.1")
+
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 
