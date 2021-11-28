@@ -17,6 +17,9 @@ plugins {
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
+
+    // Use Cloudsmith to jvm-libp2p.
+    maven("https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/")
 }
 
 dependencies {
@@ -25,6 +28,9 @@ dependencies {
 
     // Use the Kotlin JDK 8 standard library.
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+
+    // Use jvm-libp2p.
+    implementation("io.libp2p:jvm-libp2p-minimal:0.8.3-RELEASE")
 
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
