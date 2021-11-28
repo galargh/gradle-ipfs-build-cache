@@ -5,7 +5,10 @@ import org.gradle.caching.BuildCacheService
 import org.gradle.caching.BuildCacheServiceFactory
 
 class IpfsBuildCacheServiceFactory: BuildCacheServiceFactory<IpfsBuildCache> {
-    override fun createBuildCacheService(p0: IpfsBuildCache, p1: BuildCacheServiceFactory.Describer): BuildCacheService {
-        TODO("Not yet implemented")
+    override fun createBuildCacheService(configuration: IpfsBuildCache,
+                                         describer: BuildCacheServiceFactory.Describer): BuildCacheService {
+        describer.type("IPFS")
+        // TODO("Check if IPFS daemon is up and running. Alternatively, manage IPFS daemon internally.")
+        return IpfsBuildCacheService()
     }
 }

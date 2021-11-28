@@ -6,6 +6,7 @@ import org.gradle.api.initialization.Settings
 
 class IpfsBuildCachePlugin: Plugin<Settings> {
     override fun apply(settings: Settings) {
-        settings.buildCache.registerBuildCacheService(IpfsBuildCache::class.java, IpfsBuildCacheServiceFactory::class.java)
+        settings.buildCache
+                .registerBuildCacheService(IpfsBuildCache::class.java, IpfsBuildCacheServiceFactory::class.java)
     }
 }
