@@ -41,8 +41,8 @@ dependencies {
 
 gradlePlugin {
     // Define the plugin
-    val greeting by plugins.creating {
-        id = "caching.ipfs.greeting"
+    val ipfsBuildCache by plugins.creating {
+        id = "caching.ipfs.ipfs-build-cache"
         implementationClass = "caching.ipfs.IpfsBuildCachePlugin"
     }
 }
