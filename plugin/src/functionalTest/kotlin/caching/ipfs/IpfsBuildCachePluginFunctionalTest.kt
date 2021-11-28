@@ -17,12 +17,12 @@ class IpfsBuildCachePluginFunctionalTest {
 
     @Test fun `can apply plugin`() {
         // Setup the test build
-        getSettingsFile().writeText("")
-        getBuildFile().writeText("""
+        getSettingsFile().writeText("""
 plugins {
     id('caching.ipfs.ipfs-build-cache')
 }
 """)
+        getBuildFile().writeText("")
 
         // Run the build
         val runner = GradleRunner.create()
