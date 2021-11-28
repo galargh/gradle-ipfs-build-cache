@@ -1,18 +1,78 @@
 package caching.ipfs.internal
 
+import io.libp2p.core.Discoverer
+import io.libp2p.core.dsl.host
+import io.libp2p.core.mux.StreamMuxerProtocol
+import io.libp2p.core.pubsub.PubsubPublisherApi
+import io.libp2p.core.pubsub.Subscriber
+import io.libp2p.core.pubsub.Topic
+import io.libp2p.discovery.MDnsDiscovery
+import io.libp2p.etc.types.toByteArray
+import io.libp2p.etc.types.toByteBuf
+import io.libp2p.pubsub.gossip.Gossip
+import io.libp2p.security.noise.NoiseXXSecureChannel
+import io.libp2p.transport.tcp.TcpTransport
 import org.gradle.caching.*
+import java.net.Inet4Address
+import java.net.InetAddress
+import java.net.NetworkInterface
+import java.nio.charset.StandardCharsets
+import java.util.concurrent.ConcurrentHashMap
 
 class IpfsBuildCacheService: BuildCacheService {
-    // TODO("Replace with p2p KV store")
-    private val kvStore = mutableMapOf<String, String>()
+    private val kvStore = ConcurrentHashMap<String, String>()
+    private val gossip = Gossip()
+    private val host = host {
+        network {
+            listen("/ip4/0.0.0.0/tcp/0")
+        }
+        transports {
+            add(::TcpTransport)
+        }
+        secureChannels {
+            add(::NoiseXXSecureChannel)
+        }
+        muxers {
+            add(StreamMuxerProtocol.Mplex)
+        }
+        protocols {
+            add(gossip)
+        }
+    }
+    private val topic = Topic("gradle")
+    private val publisher: PubsubPublisherApi
+    private val subscriber = Subscriber {
+        val (gradleHashCode, ipfsHashCode) =
+                it.data.toByteArray().toString(StandardCharsets.UTF_8).split(",")
+        kvStore[gradleHashCode] = ipfsHashCode
+    }
+
+    private val discoverer: Discoverer
+
+    init {
+        host.start().get()
+        gossip.subscribe(subscriber, topic)
+        publisher = gossip.createPublisher(host.privKey)
+        discoverer = MDnsDiscovery(host, address = privateNetworkAddress())
+        discoverer.newPeerFoundListeners.add {
+            if (it.peerId != host.peerId) {
+                // TODO("Request all KV entries and populate the store on new connection.")
+                host.network.connect(it.peerId, *it.addresses.toTypedArray())
+            }
+        }
+    }
+
+    private fun publish(gradleHashCode: String, ipfsHashCode: String) {
+        publisher.publish("$gradleHashCode,$ipfsHashCode".toByteArray().toByteBuf(), topic)
+    }
 
     override fun close() {
-        // NOTE("IPFS daemon is managed externally. There is nothing to close.")
+        host.stop().get()
     }
 
     override fun load(key: BuildCacheKey, reader: BuildCacheEntryReader): Boolean {
         val gradleHashCode = key.hashCode
-        val ipfsHashCode = kvStore[gradleHashCode]
+        val ipfsHashCode = kvStore[gradleHashCode] ?: return false
         val process = Runtime.getRuntime().exec("ipfs cat $ipfsHashCode")
         process.waitFor()
         if (process.exitValue() != 0) {
@@ -32,6 +92,20 @@ class IpfsBuildCacheService: BuildCacheService {
             throw BuildCacheException(process.errorStream.bufferedReader().use { it.readText() })
         }
         val ipfsHashCode = process.inputStream.bufferedReader().use { it.readText() }
-        kvStore[gradleHashCode] = ipfsHashCode
+        publish(gradleHashCode, ipfsHashCode)
+    }
+
+    companion object {
+        private fun privateNetworkAddress(): InetAddress {
+            val interfaces = NetworkInterface.getNetworkInterfaces().toList()
+            val addresses = interfaces.flatMap { it.inetAddresses.toList() }
+                    .filterIsInstance<Inet4Address>()
+                    .filter { it.isSiteLocalAddress }
+                    .sortedBy { it.hostAddress }
+            return if (addresses.isNotEmpty())
+                addresses[0]
+            else
+                InetAddress.getLoopbackAddress()
+        }
     }
 }
