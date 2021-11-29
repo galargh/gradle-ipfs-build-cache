@@ -23,9 +23,10 @@ import java.util.concurrent.ConcurrentHashMap
 class IpfsBuildCacheService: BuildCacheService {
     private val kvStore = ConcurrentHashMap<String, String>()
     private val gossip = Gossip()
+    private val privateNetworkAddress = privateNetworkAddress()
     private val host = host {
         network {
-            listen("/ip4/0.0.0.0/tcp/0")
+            listen("/ip4/${privateNetworkAddress.hostAddress}/tcp/0")
         }
         transports {
             add(::TcpTransport)
@@ -47,18 +48,19 @@ class IpfsBuildCacheService: BuildCacheService {
                 it.data.toByteArray().toString(StandardCharsets.UTF_8).split(",")
         store(gradleHashCode, ipfsHashCode)
     }
-
     private val discoverer: Discoverer
 
     init {
         host.start().get()
         gossip.subscribe(subscriber, topic)
         publisher = gossip.createPublisher(host.privKey)
-        discoverer = MDnsDiscovery(host, address = privateNetworkAddress())
+        discoverer = MDnsDiscovery(host, address = privateNetworkAddress)
         discoverer.newPeerFoundListeners.add {
+            logger.info("Found new peer ${it.peerId}")
             // TODO("Request all KV entries and populate the store on new connection.")
             host.network.connect(it.peerId, *it.addresses.toTypedArray())
         }
+        discoverer.start().get()
     }
 
     private fun store(gradleHashCode: String, ipfsHashCode: String) {
@@ -72,6 +74,7 @@ class IpfsBuildCacheService: BuildCacheService {
     }
 
     override fun close() {
+        discoverer.stop().get()
         host.stop().get()
     }
 
