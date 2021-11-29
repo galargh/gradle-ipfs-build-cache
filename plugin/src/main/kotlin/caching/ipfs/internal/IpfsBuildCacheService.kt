@@ -44,6 +44,7 @@ class IpfsBuildCacheService: BuildCacheService {
             add(gossip)
         }
     }
+    // TODO("Make the topic name configurable.")
     private val topic = Topic("/gradle")
     private val publisher: PubsubPublisherApi
     private val subscriber = Subscriber {
@@ -59,6 +60,7 @@ class IpfsBuildCacheService: BuildCacheService {
         logger.info("Started ${host.peerId} service on ${host.listenAddresses().joinToString(", ")}")
         gossip.subscribe(subscriber, topic)
         publisher = gossip.createPublisher(host.privKey)
+        // NOTE("If the discoverers are started at roughly the same time on the same machine, they have trouble establishing a connection.")
         discoverer = MDnsDiscovery(host, address = privateNetworkAddress)
         discoverer.newPeerFoundListeners.add {
             if (it.peerId != host.peerId) {
