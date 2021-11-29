@@ -10,19 +10,22 @@ import io.libp2p.discovery.MDnsDiscovery
 import io.libp2p.etc.types.toByteArray
 import io.libp2p.etc.types.toByteBuf
 import io.libp2p.pubsub.gossip.Gossip
+import io.libp2p.pubsub.gossip.GossipRouter
 import io.libp2p.security.noise.NoiseXXSecureChannel
 import io.libp2p.transport.tcp.TcpTransport
 import org.apache.logging.log4j.LogManager
 import org.gradle.caching.*
+import org.gradle.internal.impldep.org.apache.commons.lang.SerializationUtils
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
-import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentHashMap
 
 class IpfsBuildCacheService: BuildCacheService {
-    private val kvStore = ConcurrentHashMap<String, String>()
-    private val gossip = Gossip()
+    // TODO("Add LRU eviction mechanism.")
+    val kvStore = ConcurrentHashMap<String, String>()
+    val router = GossipRouter()
+    private val gossip = Gossip(router = router)
     private val privateNetworkAddress = privateNetworkAddress()
     private val host = host {
         network {
@@ -41,41 +44,43 @@ class IpfsBuildCacheService: BuildCacheService {
             add(gossip)
         }
     }
-    private val topic = Topic("gradle")
+    private val topic = Topic("/gradle")
     private val publisher: PubsubPublisherApi
     private val subscriber = Subscriber {
-        val (gradleHashCode, ipfsHashCode) =
-                it.data.toByteArray().toString(StandardCharsets.UTF_8).split(",")
-        store(gradleHashCode, ipfsHashCode)
+        kvStore.putAll(
+            SerializationUtils.deserialize(it.data.toByteArray()) as Map<String, String>
+        )
+        logger.info("Updated KV store")
     }
     private val discoverer: Discoverer
 
     init {
         host.start().get()
+        logger.info("Started ${host.peerId} service on ${host.listenAddresses().joinToString(", ")}")
         gossip.subscribe(subscriber, topic)
         publisher = gossip.createPublisher(host.privKey)
         discoverer = MDnsDiscovery(host, address = privateNetworkAddress)
         discoverer.newPeerFoundListeners.add {
-            logger.info("Found new peer ${it.peerId}")
-            // TODO("Request all KV entries and populate the store on new connection.")
-            host.network.connect(it.peerId, *it.addresses.toTypedArray())
+            if (it.peerId != host.peerId) {
+                logger.info("Found new peer ${it.peerId}")
+                host.network.connect(it.peerId, *it.addresses.toTypedArray())
+            }
         }
         discoverer.start().get()
+        logger.info("Started peer discovery")
     }
 
-    private fun store(gradleHashCode: String, ipfsHashCode: String) {
-        kvStore[gradleHashCode] = ipfsHashCode
-    }
-
-    private fun publish(gradleHashCode: String, ipfsHashCode: String) {
-        logger.info("Publishing $gradleHashCode=$ipfsHashCode")
-        store(gradleHashCode, ipfsHashCode)
-        publisher.publish("$gradleHashCode,$ipfsHashCode".toByteArray().toByteBuf(), topic)
+    fun publish() {
+        publisher.publish(SerializationUtils.serialize(kvStore).toByteBuf(), topic)
+        logger.info("Published KV store")
     }
 
     override fun close() {
+        // TODO("Persist KV store on disk.")
         discoverer.stop().get()
+        logger.info("Stopped peer discovery")
         host.stop().get()
+        logger.info("Stopped service")
     }
 
     override fun load(key: BuildCacheKey, reader: BuildCacheEntryReader): Boolean {
@@ -87,6 +92,7 @@ class IpfsBuildCacheService: BuildCacheService {
             throw BuildCacheException(process.errorStream.bufferedReader().use { it.readText() })
         }
         process.inputStream.use { reader.readFrom(it) }
+        logger.info("Loaded $gradleHashCode=$ipfsHashCode")
         return true
     }
 
@@ -100,7 +106,9 @@ class IpfsBuildCacheService: BuildCacheService {
             throw BuildCacheException(process.errorStream.bufferedReader().use { it.readText() })
         }
         val ipfsHashCode = process.inputStream.bufferedReader().use { it.readText() }
-        publish(gradleHashCode, ipfsHashCode)
+        kvStore[gradleHashCode] = ipfsHashCode
+        logger.info("Added $gradleHashCode=$ipfsHashCode to KV store")
+        publish()
     }
 
     companion object {

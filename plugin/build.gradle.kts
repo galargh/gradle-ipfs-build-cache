@@ -71,3 +71,17 @@ tasks.named<Task>("check") {
     // Run the functional tests as part of `check`
     dependsOn(functionalTest)
 }
+
+val copyDependencies by tasks.registering(Copy::class) {
+    from(configurations.runtimeClasspath)
+    into("${project.buildDir}/libs/dependencies")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+val cli by tasks.registering(DefaultTask::class) {
+    dependsOn(copyDependencies)
+    dependsOn(tasks.jar)
+    doLast {
+        logger.lifecycle("java -cp \"${copyDependencies.get().destinationDir}/*:${tasks.jar.get().destinationDirectory.get()}/*\" caching.ipfs.internal.IpfsBuildCacheServiceCliKt")
+    }
+}
