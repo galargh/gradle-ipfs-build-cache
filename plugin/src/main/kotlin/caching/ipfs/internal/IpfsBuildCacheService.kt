@@ -16,6 +16,7 @@ import io.libp2p.transport.tcp.TcpTransport
 import org.apache.logging.log4j.LogManager
 import org.gradle.caching.*
 import org.gradle.internal.impldep.org.apache.commons.lang.SerializationUtils
+import java.lang.management.ManagementFactory
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
@@ -83,6 +84,7 @@ class IpfsBuildCacheService: BuildCacheService {
         logger.info("Stopped peer discovery")
         host.stop().get()
         logger.info("Stopped service")
+        logger.info(ManagementFactory.getRuntimeMXBean().getName())
     }
 
     override fun load(key: BuildCacheKey, reader: BuildCacheEntryReader): Boolean {
@@ -100,6 +102,7 @@ class IpfsBuildCacheService: BuildCacheService {
 
     override fun store(key: BuildCacheKey, writer: BuildCacheEntryWriter) {
         val gradleHashCode = key.hashCode
+        logger.info("Adding $gradleHashCode to KV store")
         val path = kotlin.io.path.createTempFile(gradleHashCode)
         path.toFile().outputStream().use { writer.writeTo(it) }
         val process = Runtime.getRuntime().exec("ipfs add ${path.toAbsolutePath()} -Q")

@@ -1,10 +1,14 @@
 plugins {
     // Apply the Java Gradle plugin development plugin to add support for developing Gradle plugins
     `java-gradle-plugin`
+    `maven-publish`
 
     // Apply the Kotlin JVM plugin to add support for Kotlin.
     id("org.jetbrains.kotlin.jvm") version "1.5.31"
 }
+
+group = "caching.ipfs"
+version = "0.0.1"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
