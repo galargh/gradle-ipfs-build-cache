@@ -1,8 +1,6 @@
 package caching.ipfs.internal
 
 fun main() {
-    val service = IpfsBuildCacheService()
-
     var message: String?
     do {
         message = readLine()?.trim()
@@ -11,18 +9,18 @@ fun main() {
             continue
 
         if (message == ":peers") {
-            println(service.router.peers.map { it.peerId }.joinToString(", "))
+            println(IpfsBuildCacheService.router.peers.map { it.peerId }.joinToString(", "))
         } else if (message.startsWith(":add")) {
             val (_, gradleHashCode, ipfsHashCode) = message.split(" ")
-            service.kvStore[gradleHashCode] = ipfsHashCode
+            IpfsBuildCacheService.kvStore[gradleHashCode] = ipfsHashCode
         } else if (message == ":publish") {
-            service.publish()
+            IpfsBuildCacheService.publish()
         } else if (message == ":store") {
-            println(service.kvStore)
+            println(IpfsBuildCacheService.kvStore)
         } else {
             println("not implemented yet: ${message}")
         }
     } while (":quit" != message)
 
-    service.close()
+    IpfsBuildCacheService.close()
 }
