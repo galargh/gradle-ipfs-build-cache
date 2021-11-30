@@ -1,6 +1,7 @@
 package caching.ipfs.internal
 
 import io.libp2p.core.Discoverer
+import io.libp2p.core.PeerId
 import io.libp2p.core.dsl.host
 import io.libp2p.core.mux.StreamMuxerProtocol
 import io.libp2p.core.pubsub.PubsubPublisherApi
@@ -94,15 +95,22 @@ class IpfsBuildCacheService: BuildCacheService {
             gossip.subscribe(subscriber, topic)
             publisher = gossip.createPublisher(host.privKey)
             discoverer = MDnsDiscovery(host, address = privateNetworkAddress)
-            discoverer.newPeerFoundListeners.add {
-                if (it.peerId != host.peerId) {
-                    logger.info("Found new peer ${it.peerId}")
+            discoverer.newPeerFoundListeners.add { newPeer ->
+                if (newPeer.peerId != host.peerId && !isConnected(newPeer.peerId)) {
+                    logger.info("Found new peer ${newPeer.peerId}")
                     // NOTE("Establishing the connection is a bit flaky.")
-                    host.network.connect(it.peerId, *it.addresses.toTypedArray())
+                    host.network.connections
+                        .filter { it.secureSession().remoteId == newPeer.peerId }
+                        .forEach { host.network.disconnect(it) }
+                    host.network.connect(newPeer.peerId, *newPeer.addresses.toTypedArray()).get()
                 }
             }
             discoverer.start().get()
             logger.info("Started peer discovery")
+        }
+
+        private fun isConnected(peerId: PeerId): Boolean {
+            return router.peers.map { it.peerId }.contains(peerId)
         }
 
         fun publish() {
