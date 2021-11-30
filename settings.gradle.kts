@@ -10,6 +10,9 @@ plugins {
     id("caching.ipfs.ipfs-build-cache") version "0.0.1"
 }
 buildCache {
+    local {
+        isEnabled = false
+    }
     remote<caching.ipfs.IpfsBuildCache> {
         isPush = true
     }

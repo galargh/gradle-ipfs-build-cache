@@ -13,9 +13,9 @@ import io.libp2p.pubsub.gossip.Gossip
 import io.libp2p.pubsub.gossip.GossipRouter
 import io.libp2p.security.noise.NoiseXXSecureChannel
 import io.libp2p.transport.tcp.TcpTransport
+import org.apache.commons.lang3.SerializationUtils
 import org.apache.logging.log4j.LogManager
 import org.gradle.caching.*
-import org.gradle.internal.impldep.org.apache.commons.lang.SerializationUtils
 import java.lang.management.ManagementFactory
 import java.net.Inet4Address
 import java.net.InetAddress

@@ -39,6 +39,9 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-api:2.14.1")
     implementation("org.apache.logging.log4j:log4j-core:2.14.1")
 
+    // Use common-lang for SerializationUtils.
+    implementation("org.apache.commons:commons-lang3:3.12.0")
+
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 
