@@ -22,7 +22,12 @@ import java.net.NetworkInterface
 import java.util.concurrent.ConcurrentHashMap
 
 class IpfsBuildCacheService: BuildCacheService {
+    init {
+        IpfsBuildCacheService
+    }
+
     override fun close() {
+        // NOTE("This is called when a build finishes, not when the Gradle daemon shuts down as we would want.")
         // IpfsBuildCacheService.close()
     }
 
@@ -88,11 +93,11 @@ class IpfsBuildCacheService: BuildCacheService {
             logger.info("Started ${host.peerId} service on ${host.listenAddresses().joinToString(", ")}")
             gossip.subscribe(subscriber, topic)
             publisher = gossip.createPublisher(host.privKey)
-            // NOTE("If the discoverers are started at roughly the same time on the same machine, they have trouble establishing a connection.")
             discoverer = MDnsDiscovery(host, address = privateNetworkAddress)
             discoverer.newPeerFoundListeners.add {
                 if (it.peerId != host.peerId) {
                     logger.info("Found new peer ${it.peerId}")
+                    // NOTE("Establishing the connection is a bit flaky.")
                     host.network.connect(it.peerId, *it.addresses.toTypedArray())
                 }
             }
