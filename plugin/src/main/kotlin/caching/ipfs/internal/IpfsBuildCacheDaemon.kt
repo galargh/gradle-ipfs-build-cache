@@ -101,13 +101,13 @@ class IpfsBuildCacheDaemon {
         val gradleHashCode = key.hashCode
         val ipfsHashCode = kvStore[gradleHashCode] ?: return false
         val path = kotlin.io.path.createTempFile(ipfsHashCode)
-        val process = Runtime.getRuntime().exec("ipfs get -o ${path.toAbsolutePath()} $ipfsHashCode")
+        val process = Runtime.getRuntime().exec("ipfs get $ipfsHashCode --output=${path.toAbsolutePath()}")
         process.waitFor()
         if (process.exitValue() != 0) {
             throw BuildCacheException(process.errorStream.bufferedReader().use { it.readText() })
         }
         Files.newInputStream(path).use { reader.readFrom(it) }
-        logger.info("Loaded $gradleHashCode=$ipfsHashCode")
+        logger.info("Loaded $gradleHashCode=$ipfsHashCode from IPFS")
         return true
     }
 
@@ -116,12 +116,12 @@ class IpfsBuildCacheDaemon {
         logger.info("Adding $gradleHashCode to KV store")
         val path = kotlin.io.path.createTempFile(gradleHashCode)
         path.toFile().outputStream().use { writer.writeTo(it) }
-        val process = Runtime.getRuntime().exec("ipfs add ${path.toAbsolutePath()} -Q")
+        val process = Runtime.getRuntime().exec("ipfs add ${path.toAbsolutePath()} --quieter")
         process.waitFor()
         if (process.exitValue() != 0) {
             throw BuildCacheException(process.errorStream.bufferedReader().use { it.readText() })
         }
-        val ipfsHashCode = process.inputStream.bufferedReader().use { it.readText() }
+        val ipfsHashCode = process.inputStream.bufferedReader().use { it.readText().trim() }
         kvStore[gradleHashCode] = ipfsHashCode
         logger.info("Added $gradleHashCode=$ipfsHashCode to KV store")
         publish()
