@@ -4,6 +4,7 @@ import org.gradle.caching.*
 
 class IpfsBuildCacheService: BuildCacheService {
     init {
+        // TODO("Recreate the daemon if the configuration changes.")
         IpfsBuildCacheService
     }
 
