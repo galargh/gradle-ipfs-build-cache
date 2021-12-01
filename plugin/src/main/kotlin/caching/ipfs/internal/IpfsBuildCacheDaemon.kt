@@ -72,6 +72,7 @@ class IpfsBuildCacheDaemon {
                 host.network.connections
                     .filter { it.secureSession().remoteId == newPeer.peerId }
                     .forEach { host.network.disconnect(it) }
+                // TODO("Share current state of KV store with new peer on connect.")
                 host.network.connect(newPeer.peerId, *newPeer.addresses.toTypedArray()).get()
             }
         }

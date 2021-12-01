@@ -6,8 +6,7 @@ pluginManagement {
     }
 }
 
-/*
-plugins {
+/*plugins {
     id("caching.ipfs.ipfs-build-cache") version "0.0.1"
 }
 buildCache {
@@ -17,8 +16,7 @@ buildCache {
     remote<caching.ipfs.IpfsBuildCache> {
         isPush = true
     }
-}
-*/
+}*/
 
 rootProject.name = "ipfs-build-cache"
 include("plugin")
