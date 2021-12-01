@@ -89,6 +89,6 @@ val cli by tasks.registering(DefaultTask::class) {
     dependsOn(copyDependencies)
     dependsOn(tasks.jar)
     doLast {
-        logger.lifecycle("java -cp \"${copyDependencies.get().destinationDir}/*:${tasks.jar.get().destinationDirectory.get()}/*\" caching.ipfs.internal.IpfsBuildCacheServiceCliKt")
+        logger.lifecycle("java -cp \"${copyDependencies.get().destinationDir}/*:${tasks.jar.get().destinationDirectory.get()}/*\" caching.ipfs.internal.IpfsBuildCacheCliKt")
     }
 }

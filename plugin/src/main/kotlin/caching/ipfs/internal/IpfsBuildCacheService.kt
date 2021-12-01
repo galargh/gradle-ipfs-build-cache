@@ -1,26 +1,6 @@
 package caching.ipfs.internal
 
-import io.libp2p.core.Discoverer
-import io.libp2p.core.PeerId
-import io.libp2p.core.dsl.host
-import io.libp2p.core.mux.StreamMuxerProtocol
-import io.libp2p.core.pubsub.PubsubPublisherApi
-import io.libp2p.core.pubsub.Subscriber
-import io.libp2p.core.pubsub.Topic
-import io.libp2p.discovery.MDnsDiscovery
-import io.libp2p.etc.types.toByteArray
-import io.libp2p.etc.types.toByteBuf
-import io.libp2p.pubsub.gossip.Gossip
-import io.libp2p.pubsub.gossip.GossipRouter
-import io.libp2p.security.noise.NoiseXXSecureChannel
-import io.libp2p.transport.tcp.TcpTransport
-import org.apache.commons.lang3.SerializationUtils
-import org.apache.logging.log4j.LogManager
 import org.gradle.caching.*
-import java.net.Inet4Address
-import java.net.InetAddress
-import java.net.NetworkInterface
-import java.util.concurrent.ConcurrentHashMap
 
 class IpfsBuildCacheService: BuildCacheService {
     init {
@@ -41,6 +21,6 @@ class IpfsBuildCacheService: BuildCacheService {
     }
 
     companion object {
-        private val daemon = IpfsBuildCacheServiceDaemon()
+        private val daemon = IpfsBuildCacheDaemon()
     }
 }

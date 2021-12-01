@@ -1,7 +1,7 @@
 package caching.ipfs.internal
 
 fun main() {
-    val daemon = IpfsBuildCacheServiceDaemon()
+    val daemon = IpfsBuildCacheDaemon()
 
     help()
 

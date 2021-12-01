@@ -25,7 +25,7 @@ import java.net.InetAddress
 import java.net.NetworkInterface
 import java.util.concurrent.ConcurrentHashMap
 
-class IpfsBuildCacheServiceDaemon {
+class IpfsBuildCacheDaemon {
     // TODO("Add LRU eviction mechanism.")
     val kvStore = ConcurrentHashMap<String, String>()
     val router = GossipRouter()
