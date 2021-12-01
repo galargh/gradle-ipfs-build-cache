@@ -23,6 +23,7 @@ import org.gradle.caching.BuildCacheKey
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
+import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 
 class IpfsBuildCacheDaemon {
@@ -98,12 +99,13 @@ class IpfsBuildCacheDaemon {
     fun load(key: BuildCacheKey, reader: BuildCacheEntryReader): Boolean {
         val gradleHashCode = key.hashCode
         val ipfsHashCode = kvStore[gradleHashCode] ?: return false
-        val process = Runtime.getRuntime().exec("ipfs cat $ipfsHashCode")
+        val path = kotlin.io.path.createTempFile(ipfsHashCode)
+        val process = Runtime.getRuntime().exec("ipfs get -o ${path.toAbsolutePath()} $ipfsHashCode")
         process.waitFor()
         if (process.exitValue() != 0) {
             throw BuildCacheException(process.errorStream.bufferedReader().use { it.readText() })
         }
-        process.inputStream.use { reader.readFrom(it) }
+        Files.newInputStream(path).use { reader.readFrom(it) }
         logger.info("Loaded $gradleHashCode=$ipfsHashCode")
         return true
     }
