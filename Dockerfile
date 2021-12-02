@@ -1,12 +1,14 @@
+ARG source_directory=.
+
 FROM gradle:7.3.0-jdk11 AS gradle-builder
 WORKDIR /build
-COPY plan .
+COPY ${source_directory} .
 RUN gradle publish --no-daemon --no-watch-fs
 
 FROM golang:1.16-alpine AS go-builder
 WORKDIR /build
 ENV CGO_ENABLED 0
-COPY plan/testground .
+COPY ${source_directory}/testground .
 RUN go build -a
 
 FROM alpine AS ipfs-downloader

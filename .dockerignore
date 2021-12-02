@@ -1,4 +1,6 @@
+.git
 .gradle
 build
+plugin/build
 .idea
 testground/testground
