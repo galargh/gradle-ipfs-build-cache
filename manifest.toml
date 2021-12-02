@@ -1,4 +1,4 @@
-name = "ipfs-build-cache"
+name = "gradle-ipfs-build-cache"
 
 [defaults]
 builder = "docker:generic"

@@ -1,12 +1,12 @@
 FROM gradle:7.3.0-jdk11 AS gradle-builder
 WORKDIR /build
-COPY . .
+COPY plan .
 RUN gradle publish --no-daemon --no-watch-fs
 
 FROM golang:1.16-alpine AS go-builder
 WORKDIR /build
 ENV CGO_ENABLED 0
-COPY plan .
+COPY plan/testground .
 RUN go build -a
 
 FROM alpine AS ipfs-downloader
@@ -16,7 +16,7 @@ RUN tar -xvzf go-ipfs_v0.10.0_linux-amd64.tar.gz
 
 FROM --platform=linux/amd64 gradle:7.3.0-jdk11
 COPY --from=gradle-builder /build/plugin/build/.m2 /root/.m2
-COPY --from=go-builder /build/plan /usr/local/bin/plan
+COPY --from=go-builder /build/testground /usr/local/bin/testground
 COPY --from=ipfs-downloader /download/go-ipfs/ipfs /usr/local/bin/ipfs
 RUN ipfs init --profile server
 # IPFS
@@ -27,4 +27,4 @@ EXPOSE 8080
 EXPOSE 8081
 # testground
 EXPOSE 6060
-ENTRYPOINT ["plan"]
+ENTRYPOINT ["testground"]

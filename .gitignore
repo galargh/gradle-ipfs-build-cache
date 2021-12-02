@@ -8,4 +8,4 @@ build
 .idea
 
 # Ignore go build output
-plan/plan
+testground/testground

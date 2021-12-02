@@ -1,5 +1,4 @@
 .gradle
 build
 .idea
-plan/Dockerfile
-plan/plan
+testground/testground
