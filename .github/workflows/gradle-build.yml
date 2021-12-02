@@ -14,5 +14,5 @@ jobs:
           distribution: 'zulu'
       - uses: gradle/wrapper-validation-action@v1
       - uses: gradle/gradle-build-action@v2
-          with:
-            arguments: build --scan
+        with:
+          arguments: build --scan
