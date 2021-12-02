@@ -25,6 +25,14 @@ repositories {
     jcenter()
 }
 
+publishing {
+    repositories {
+        maven {
+            url = uri(layout.buildDirectory.dir(".m2/repository"))
+        }
+    }
+}
+
 dependencies {
     // Align versions of all Kotlin components
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))

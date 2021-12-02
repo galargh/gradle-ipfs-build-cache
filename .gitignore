@@ -6,3 +6,6 @@ build
 
 # Ignore Intellij IDEA project directory
 .idea
+
+# Ignore go build output
+plan/plan

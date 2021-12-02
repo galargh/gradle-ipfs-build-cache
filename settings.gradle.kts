@@ -28,4 +28,3 @@ gradleEnterprise {
 
 rootProject.name = "ipfs-build-cache"
 include("plugin")
-
