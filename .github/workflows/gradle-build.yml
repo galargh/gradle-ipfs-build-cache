@@ -7,12 +7,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - run: .github/scripts/install-ipfs.sh
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v2
         with:
           java-version: '11'
           distribution: 'zulu'
-      - uses: gradle/wrapper-validation-action@v1
       - uses: gradle/gradle-build-action@v2
         with:
           arguments: build --scan
