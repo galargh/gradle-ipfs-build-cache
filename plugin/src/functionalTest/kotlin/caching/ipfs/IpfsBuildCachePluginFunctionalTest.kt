@@ -15,11 +15,20 @@ class IpfsBuildCachePluginFunctionalTest {
     private fun getBuildFile() = getProjectDir().resolve("build.gradle")
     private fun getSettingsFile() = getProjectDir().resolve("settings.gradle")
 
-    @Test fun `can apply plugin`() {
+    @Test fun `can start IpfsBuildCache`() {
         // Setup the test build
         getSettingsFile().writeText("""
 plugins {
     id('caching.ipfs.ipfs-build-cache')
+}
+
+buildCache {
+    local {
+        enabled = false
+    }
+    remote(caching.ipfs.IpfsBuildCache) {
+        push = true
+    }
 }
 """)
         getBuildFile().writeText("")
@@ -27,7 +36,7 @@ plugins {
         // Run the build
         val runner = GradleRunner.create()
         runner.withPluginClasspath()
-        runner.withArguments("help")
+        runner.withArguments("help", "--build-cache")
         runner.withProjectDir(getProjectDir())
         runner.build();
     }
