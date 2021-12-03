@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  cache-feeder:
+    build: .
+    volumes:
+      - ./example:/home/gradle
+  cache-reader:
+    build: .
+    volumes:
+      - ./example:/home/gradle

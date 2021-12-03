@@ -2,7 +2,10 @@
 .gradle
 
 # Ignore Gradle build output directory
-build
+**/build
 
 # Ignore Intellij IDEA project directory
 .idea
+
+# Ignore git directory
+.git
