@@ -3,7 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net"
+	"os"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/testground/sdk-go/network"
@@ -36,7 +40,7 @@ func fromCache(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			Bandwidth: 1 << 20, // 1Mib
 		},
 		CallbackState: "network-configured",
-		RoutingPolicy: network.DenyAll,
+		RoutingPolicy: network.AllowAll,
 	}
 
 	runenv.RecordMessage("before netclient.MustConfigureNetwork")
@@ -92,11 +96,43 @@ func fromCache(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		return err
 	}
 
+	runenv.RecordMessage(conn.LocalAddr().String())
+
 	defer conn.Close()
 
 	buf := make([]byte, 1)
 
+	runenv.RecordMessage("starting ipfs daemon")
+
+	cmd := exec.Command("ipfs", "daemon")
+	stdout, err := cmd.StdoutPipe()
+	cmd.Stderr = cmd.Stdout
+	if err != nil {
+		return err
+	}
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+
 	runenv.RecordMessage("waiting until ready")
+
+	ready := "Daemon is ready"
+	prev := ""
+	for {
+		bytes := make([]byte, len([]byte(ready)))
+		_, err := stdout.Read(bytes)
+		if err != nil {
+			return err
+		}
+		curr := string(bytes)
+		if strings.Contains(prev+curr, ready) {
+			break
+		}
+		prev = curr
+	}
+
+	runenv.RecordMessage(ready)
 
 	// wait till both sides are ready
 	_, err = conn.Write([]byte{0})
@@ -109,10 +145,43 @@ func fromCache(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		return err
 	}
 
+	runenv.RecordMessage("checking id")
+	cmd = exec.Command("ipfs", "id")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+	runenv.RecordMessage(string(output))
+
+	runenv.RecordMessage("checking peers")
+	cmd = exec.Command("ipfs", "swarm", "peers")
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+	runenv.RecordMessage(string(output))
+
 	if seq == 1 {
 		runenv.RecordMessage("starting my ipfs build cache daemon")
+		file, err := ioutil.TempFile(os.TempDir(), "file-")
+		if err != nil {
+			return err
+		}
+		defer os.Remove(file.Name())
+		_, err = file.Write([]byte("i'm adding this in container 1"))
+		if err != nil {
+			return err
+		}
+		cmd = exec.Command("ipfs", "add", "-Q", file.Name())
+		output, err = cmd.CombinedOutput()
+		if err != nil {
+			return err
+		}
+		output = output[:len(output)-1]
+		runenv.RecordMessage("published: " + string(output))
+
 		// gradle help --build-cache
-		_, err = conn.Write([]byte{0})
+		_, err = conn.Write(output)
 		if err != nil {
 			return err
 		}
@@ -134,10 +203,20 @@ func fromCache(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	}
 
 	if seq == 2 {
-		_, err = conn.Read(buf)
+		cid := make([]byte, 256)
+		_, err = conn.Read(cid)
 		if err != nil {
 			return err
 		}
+		runenv.RecordMessage("ipfs cat " + string(cid) + "EOC")
+
+		cmd = exec.Command("ipfs", "cat", "QmSQnkUevN1qe3pdzDpDqJf494QULEae2tM3DZ3nDPQ4qv")
+		output, err = cmd.CombinedOutput()
+		if err != nil {
+			return err
+		}
+		runenv.RecordMessage("retrieved: " + string(output))
+
 		runenv.RecordMessage("starting my ipfs build cache daemon")
 		// gradle help --build-cache
 		_, err = conn.Write([]byte{0})
