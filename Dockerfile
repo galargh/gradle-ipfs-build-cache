@@ -11,6 +11,7 @@ RUN tar -xvzf go-ipfs_v0.10.0_linux-amd64.tar.gz
 FROM --platform=linux/amd64 gradle:7.3.0-jdk11
 COPY --from=gradle-builder /build/plugin/build/.m2 /root/.m2
 COPY --from=ipfs-downloader /download/go-ipfs/ipfs /usr/local/bin/ipfs
+COPY ./.ipfs/swarm.key /root/.ipfs/swarm.key
 COPY ./example .
 EXPOSE 4001
 EXPOSE 4001/udp
