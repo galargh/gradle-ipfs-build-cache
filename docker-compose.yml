@@ -1,10 +1,12 @@
 version: "3.9"
 services:
   cache-feeder:
+    container_name: cache-feeder
     build: .
     volumes:
       - ./example:/home/gradle
   cache-reader:
+    container_name: cache-reader
     build: .
     volumes:
       - ./example:/home/gradle

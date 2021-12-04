@@ -8,12 +8,12 @@ test_description="Retrieve build cache entry from IPFS"
 
 test_expect_success "Success is reported like this" "
     docker compose up --build --detach
-    ( docker logs -f gradle-ipfs-build-cache-cache-feeder-1 & ) | grep -q \"Daemon is ready\"
-    ( docker logs -f gradle-ipfs-build-cache-cache-reader-1 & ) | grep -q \"Daemon is ready\"
-    docker exec gradle-ipfs-build-cache-cache-feeder-1 gradle help --build-cache
-    docker exec gradle-ipfs-build-cache-cache-reader-1 gradle help --build-cache
-    docker exec gradle-ipfs-build-cache-cache-feeder-1 gradle build --build-cache
-    docker exec gradle-ipfs-build-cache-cache-reader-1 gradle build --build-cache
+    ( docker logs -f cache-feeder & ) | grep -q \"Daemon is ready\"
+    ( docker logs -f cache-reader & ) | grep -q \"Daemon is ready\"
+    docker exec cache-feeder gradle help --build-cache
+    docker exec cache-reader gradle help --build-cache
+    docker exec cache-feeder gradle build --build-cache
+    docker exec cache-reader gradle build --build-cache
     # check FROM-CACHE
     echo success
 "
