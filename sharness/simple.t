@@ -7,11 +7,14 @@ test_description="Retrieve build cache entry from IPFS"
 . "$SHARNESS_TEST_SRCDIR/sharness.sh"
 
 test_expect_success "Success is reported like this" "
-    #docker compose up --build --detach
+    docker compose up --build --detach
     ( docker logs -f gradle-ipfs-build-cache-cache-feeder-1 & ) | grep -q \"Daemon is ready\"
     ( docker logs -f gradle-ipfs-build-cache-cache-reader-1 & ) | grep -q \"Daemon is ready\"
     docker exec gradle-ipfs-build-cache-cache-feeder-1 gradle help --build-cache
     docker exec gradle-ipfs-build-cache-cache-reader-1 gradle help --build-cache
+    docker exec gradle-ipfs-build-cache-cache-feeder-1 gradle build --build-cache
+    docker exec gradle-ipfs-build-cache-cache-reader-1 gradle build --build-cache
+    # check FROM-CACHE
     echo success
 "
 
