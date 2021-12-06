@@ -1,0 +1,12 @@
+name: Sharness Test
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      TEST_OPTS: --verbose
+    steps:
+      - uses: actions/checkout@v2
+      - run: cd sharness && make
